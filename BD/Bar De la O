@@ -1,0 +1,320 @@
+CREATE DATABASE BarDeLaO
+USE BarDeLaO;
+GO
+
+--------------------------------------------------
+-- EMPLEADOS
+--------------------------------------------------
+
+CREATE TABLE empleados (
+    id INT IDENTITY(1,1) PRIMARY KEY,
+    codigo_empleado VARCHAR(20) UNIQUE,
+    nombre VARCHAR(100),
+    apellido VARCHAR(100),
+    telefono VARCHAR(20),
+    correo VARCHAR(100),
+    puesto VARCHAR(50),
+    salario DECIMAL(10,2),
+    pin VARCHAR(10),
+    fecha_contratacion DATE,
+    estado VARCHAR(20) DEFAULT 'ACTIVO'
+);
+
+--------------------------------------------------
+-- USUARIOS
+--------------------------------------------------
+
+CREATE TABLE usuarios (
+    id INT IDENTITY(1,1) PRIMARY KEY,
+    username VARCHAR(50) UNIQUE,
+    password_hash VARCHAR(255),
+    rol VARCHAR(20),
+    empleado_id INT,
+    activo BIT DEFAULT 1,
+
+    FOREIGN KEY (empleado_id)
+    REFERENCES empleados(id)
+);
+
+--------------------------------------------------
+-- CLIENTES
+--------------------------------------------------
+
+CREATE TABLE clientes (
+    id INT IDENTITY(1,1) PRIMARY KEY,
+    nombre VARCHAR(100),
+    telefono VARCHAR(20),
+    correo VARCHAR(100),
+    fecha_registro DATETIME DEFAULT GETDATE()
+);
+
+--------------------------------------------------
+-- MESAS
+--------------------------------------------------
+
+CREATE TABLE mesas (
+    id INT IDENTITY(1,1) PRIMARY KEY,
+    numero INT,
+    capacidad INT,
+    estado VARCHAR(20) DEFAULT 'Disponible'
+);
+
+--------------------------------------------------
+-- CATEGORIAS
+--------------------------------------------------
+
+CREATE TABLE categorias (
+    id INT IDENTITY(1,1) PRIMARY KEY,
+    nombre VARCHAR(100)
+);
+
+--------------------------------------------------
+-- PRODUCTOS
+--------------------------------------------------
+
+CREATE TABLE productos (
+    id INT IDENTITY(1,1) PRIMARY KEY,
+    nombre VARCHAR(100),
+    descripcion VARCHAR(255),
+    precio DECIMAL(10,2),
+    stock INT,
+    categoria_id INT,
+
+    FOREIGN KEY (categoria_id)
+    REFERENCES categorias(id)
+);
+
+--------------------------------------------------
+-- PROVEEDORES
+--------------------------------------------------
+
+CREATE TABLE proveedores (
+    id INT IDENTITY(1,1) PRIMARY KEY,
+    nombre VARCHAR(100),
+    telefono VARCHAR(20),
+    correo VARCHAR(100),
+    direccion VARCHAR(255)
+);
+
+--------------------------------------------------
+-- COMPRAS
+--------------------------------------------------
+
+CREATE TABLE compras (
+    id INT IDENTITY(1,1) PRIMARY KEY,
+    proveedor_id INT,
+    fecha DATETIME DEFAULT GETDATE(),
+    total DECIMAL(10,2),
+
+    FOREIGN KEY (proveedor_id)
+    REFERENCES proveedores(id)
+);
+
+--------------------------------------------------
+-- DETALLE COMPRAS
+--------------------------------------------------
+
+CREATE TABLE detalle_compras (
+    id INT IDENTITY(1,1) PRIMARY KEY,
+    compra_id INT,
+    producto_id INT,
+    cantidad INT,
+    precio_unitario DECIMAL(10,2),
+
+    FOREIGN KEY (compra_id)
+    REFERENCES compras(id),
+
+    FOREIGN KEY (producto_id)
+    REFERENCES productos(id)
+);
+
+--------------------------------------------------
+-- VENTAS
+--------------------------------------------------
+
+CREATE TABLE ventas (
+    id INT IDENTITY(1,1) PRIMARY KEY,
+
+    cliente_id INT,
+    empleado_id INT,
+    mesa_id INT,
+
+    fecha DATETIME DEFAULT GETDATE(),
+
+    subtotal DECIMAL(10,2),
+    impuesto DECIMAL(10,2),
+    total DECIMAL(10,2),
+
+    metodo_pago VARCHAR(20),
+
+    FOREIGN KEY (cliente_id)
+    REFERENCES clientes(id),
+
+    FOREIGN KEY (empleado_id)
+    REFERENCES empleados(id),
+
+    FOREIGN KEY (mesa_id)
+    REFERENCES mesas(id)
+);
+
+--------------------------------------------------
+-- DETALLE VENTAS
+--------------------------------------------------
+
+CREATE TABLE detalle_ventas (
+    id INT IDENTITY(1,1) PRIMARY KEY,
+
+    venta_id INT,
+    producto_id INT,
+
+    cantidad INT,
+    precio_unitario DECIMAL(10,2),
+    subtotal DECIMAL(10,2),
+
+    FOREIGN KEY (venta_id)
+    REFERENCES ventas(id),
+
+    FOREIGN KEY (producto_id)
+    REFERENCES productos(id)
+);
+
+--------------------------------------------------
+-- ASISTENCIA
+--------------------------------------------------
+
+CREATE TABLE asistencia (
+    id INT IDENTITY(1,1) PRIMARY KEY,
+
+    empleado_id INT,
+
+    fecha DATE,
+
+    hora_entrada DATETIME,
+    hora_salida DATETIME,
+
+    FOREIGN KEY (empleado_id)
+    REFERENCES empleados(id)
+);
+
+
+--------------------------------------------------
+-- CAJA
+--------------------------------------------------
+
+CREATE TABLE caja (
+    id INT IDENTITY(1,1) PRIMARY KEY,
+
+    fecha DATETIME DEFAULT GETDATE(),
+
+    monto_inicial DECIMAL(10,2),
+    monto_final DECIMAL(10,2),
+
+    total_ventas DECIMAL(10,2),
+
+    total_efectivo DECIMAL(10,2),
+    total_tarjeta DECIMAL(10,2),
+    total_sinpe DECIMAL(10,2),
+
+    usuario_apertura INT,
+    usuario_cierre INT,
+
+    estado VARCHAR(20)
+);
+
+--------------------------------------------------
+-- MOVIMIENTOS CAJA
+--------------------------------------------------
+
+CREATE TABLE movimientos_caja (
+    id INT IDENTITY(1,1) PRIMARY KEY,
+
+    caja_id INT,
+    usuario_id INT,
+
+    tipo VARCHAR(20),
+    descripcion VARCHAR(255),
+
+    monto DECIMAL(10,2),
+
+    fecha DATETIME DEFAULT GETDATE(),
+
+    FOREIGN KEY (caja_id)
+    REFERENCES caja(id),
+
+    FOREIGN KEY (usuario_id)
+    REFERENCES usuarios(id)
+);
+
+--------------------------------------------------
+-- AUDITORIA
+--------------------------------------------------
+
+CREATE TABLE auditoria (
+    id INT IDENTITY(1,1) PRIMARY KEY,
+
+    usuario_id INT,
+
+    accion VARCHAR(255),
+
+    fecha DATETIME DEFAULT GETDATE(),
+
+    FOREIGN KEY (usuario_id)
+    REFERENCES usuarios(id)
+);
+
+INSERT INTO categorias(nombre)
+VALUES
+('Cervezas'),
+('Cócteles'),
+('Licores'),
+('Comidas'),
+('Snacks');
+
+INSERT INTO mesas(numero, capacidad)
+VALUES
+(1,4),
+(2,4),
+(3,6),
+(4,4),
+(5,8);
+
+
+--⚠️ Más adelante, en Node.js, la contraseña debe guardarse con bcrypt y no como texto plano.
+INSERT INTO empleados
+(
+codigo_empleado,
+nombre,
+apellido,
+puesto,
+pin,
+fecha_contratacion
+)
+VALUES
+(
+'ADMIN001',
+'Aaron',
+'Duran',
+'Administrador',
+'1234',
+GETDATE()
+);
+
+INSERT INTO usuarios
+(
+username,
+password_hash,
+rol,
+empleado_id
+)
+VALUES
+(
+'admin',
+'admin123',
+'ADMIN',
+1
+);
+
+SELECT * FROM empleados;
+SELECT * FROM usuarios;
+SELECT * FROM productos;
+SELECT * FROM ventas;
